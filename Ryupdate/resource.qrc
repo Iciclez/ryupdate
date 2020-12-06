@@ -1,0 +1,6 @@
+<RCC>
+    <qresource prefix="/">
+        <file>resources/app.png</file>
+        <file>resources/sort_down-48.png</file>
+    </qresource>
+</RCC>
