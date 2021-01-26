@@ -65,7 +65,7 @@ public:
 	};
 
 	//do something about constructors and destructors
-	code_generator(const std::string &classname, const implementation &constructor_impl = implementation(), const implementation &destructor_impl = implementation());
+	code_generator(const std::string &class_name, const implementation &constructor_impl = implementation(), const implementation &destructor_impl = implementation());
 	~code_generator();
 
 	void set_constructor(const implementation &constructor_impl);

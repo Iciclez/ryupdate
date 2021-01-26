@@ -78,14 +78,20 @@
     <ClCompile Include="settingswindow.cpp">
       <Filter>Source Files\gui</Filter>
     </ClCompile>
-    <ClCompile Include="signatureitem.cpp">
-      <Filter>Source Files\gui</Filter>
-    </ClCompile>
     <ClCompile Include="signature_export.cpp">
       <Filter>Source Files\misc</Filter>
     </ClCompile>
     <ClCompile Include="code_generator.cpp">
       <Filter>Source Files\misc</Filter>
+    </ClCompile>
+    <ClCompile Include="GeneratedFiles\Debug\moc_signature_item.cpp">
+      <Filter>Generated Files\Debug</Filter>
+    </ClCompile>
+    <ClCompile Include="GeneratedFiles\Release\moc_signature_item.cpp">
+      <Filter>Generated Files\Release</Filter>
+    </ClCompile>
+    <ClCompile Include="signature_item.cpp">
+      <Filter>Source Files\gui</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -109,10 +115,10 @@
     <CustomBuild Include="mainwindow.hpp">
       <Filter>Header Files\gui</Filter>
     </CustomBuild>
-    <CustomBuild Include="signatureitem.hpp">
+    <CustomBuild Include="settingswindow.hpp">
       <Filter>Header Files\gui</Filter>
     </CustomBuild>
-    <CustomBuild Include="settingswindow.hpp">
+    <CustomBuild Include="signature_item.hpp">
       <Filter>Header Files\gui</Filter>
     </CustomBuild>
   </ItemGroup>

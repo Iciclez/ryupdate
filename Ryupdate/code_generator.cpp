@@ -95,9 +95,9 @@ std::string function::get_source(const std::string class_name)
 	return text.str();
 }
 
-code_generator::code_generator(const std::string &classname, const implementation &constructor_impl, const implementation &destructor_impl)
+code_generator::code_generator(const std::string &class_name, const implementation &constructor_impl, const implementation &destructor_impl)
 {
-	this->class_name = classname;
+	this->class_name = class_name;
 	this->constructor = constructor_impl;
 	this->destructor = destructor_impl;
 }
@@ -151,17 +151,10 @@ std::string code_generator::get_header()
 		field_graph.insert(p);
 	}
 
-	std::pair<std::multimap<function::access_specifier, function>::iterator,
-			  std::multimap<function::access_specifier, function>::iterator>
-		function_range;
-	std::pair<std::multimap<code_generator::access_specifier, std::string>::iterator,
-			  std::multimap<code_generator::access_specifier, std::string>::iterator>
-		field_range;
-
 	for (int32_t i = 1; i < 4; ++i)
 	{
-		function_range = function_graph.equal_range(static_cast<function::access_specifier>(i));
-		field_range = field_graph.equal_range(static_cast<code_generator::access_specifier>(i));
+		auto function_range = function_graph.equal_range(static_cast<function::access_specifier>(i));
+		auto field_range = field_graph.equal_range(static_cast<code_generator::access_specifier>(i));
 
 		if (function_range.first == function_range.second && field_range.first == field_range.second && i != 1)
 		{
@@ -186,14 +179,14 @@ std::string code_generator::get_header()
 			break;
 		}
 
-		for (std::multimap<function::access_specifier, function>::iterator it = function_range.first; it != function_range.second; ++it)
+		for (auto it = function_range.first; it != function_range.second; ++it)
 		{
 			header << '\t' << it->second.get_header() << ";\n";
 		}
 
 		header << '\n';
 
-		for (std::multimap<code_generator::access_specifier, std::string>::iterator it = field_range.first; it != field_range.second; ++it)
+		for (auto it = field_range.first; it != field_range.second; ++it)
 		{
 			header << '\t' << it->second << ";\n";
 		}

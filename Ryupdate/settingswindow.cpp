@@ -10,7 +10,7 @@
 #include <dbghelp.h>
 #include <Psapi.h>
 
-#include "signatureitem.hpp"
+#include "signature_item.hpp"
 #include "zephyrus.hpp"
 
 #include <string>
@@ -65,48 +65,41 @@ settingswindow::settingswindow(QWidget *parent)
 		return modulesinformation;
 	};
 
-	regions = [](const std::unordered_map<std::string, std::pair<address_t, size_t>> &n) -> std::unordered_map<std::string, std::pair<std::string, std::pair<unsigned long, size_t>>> {
-		std::unordered_map<std::string, std::pair<std::string, std::pair<unsigned long, size_t>>> r;
-		r.reserve(n.size());
+	auto modules_information = getmodulesinformation();
+	std::unordered_map<std::string, std::pair<std::string, std::pair<address_t, size_t>>> regions;
+	regions.reserve(modules_information.size());
 
-		for (const std::pair<std::string, std::pair<unsigned long, size_t>> &p : n)
-		{
-			std::string filename(PathFindFileNameA(p.first.c_str()));
-			r[filename + " (" + signatureitem::uint_to_string<unsigned long>(p.second.first) + "->" + signatureitem::uint_to_string<unsigned long>(p.second.first + p.second.second) + ")"] = std::make_pair(p.first, p.second);
-		}
-
-		return r;
-	}(getmodulesinformation());
-
-	for (const std::pair<std::string, std::pair<std::string, std::pair<unsigned long, size_t>>> &p : regions)
+	for (const auto& p : modules_information)
 	{
-		regionselection[p.first] = false;
+		std::string region_key = std::string(PathFindFileName(p.first.c_str())) + " (" + signature_item::uint_to_string<address_t>(p.second.first) + "->" + signature_item::uint_to_string<address_t>(p.second.first + p.second.second) + ")";
+		regions[region_key] = std::make_pair(p.first, p.second);
+		region_selection[region_key] = false;
 	}
 
-	std::vector<treeviewitem_t> treeviewitems;
+	std::vector<treeviewitem_t> treeview_items;
 
-	treeviewitems.push_back(treeviewitem_t("General",
-										   {{"random string when inserting new signature", itemdata_t([this](bool b) { newsignature_randomstring = b; }, {})}}));
+	treeview_items.push_back(treeviewitem_t("General",
+										   {{"random string when inserting new signature", item_value_t([this](bool b) { newsignature_randomstring = b; }, {})}}));
 
-	std::unordered_map<std::string, itemdata_t> itemdatamap;
-	for (const std::pair<std::string, bool> &p : regionselection)
+	std::unordered_map<std::string, item_value_t> item_values;
+	for (const std::pair<std::string, bool> &p : region_selection)
 	{
-		itemdatamap[p.first] = itemdata_t([p, this](bool b) {
-			regionselection[p.first] = b;
+		item_values[p.first] = item_value_t([p, this](bool b) {
+			region_selection[p.first] = b;
 
 			if (b)
 			{
-				for (std::unordered_map<std::string, bool>::iterator it = regionselection.begin(); it != regionselection.end(); ++it)
+				for (std::unordered_map<std::string, bool>::iterator it = region_selection.begin(); it != region_selection.end(); ++it)
 				{
 					if (it->first.compare(p.first)) //does not equal
 					{
 						it->second = false;
 
-						for (const std::pair<QTreeWidgetItem *, std::function<void(bool)>> &p3 : check_treewidgetitem_handler)
+						for (const auto &handler_pair : check_treewidgetitem_handler)
 						{
-							if (p3.first->checkState(0) == Qt::Checked && !it->first.compare(p3.first->text(0).toStdString()))
+							if (handler_pair.first->checkState(0) == Qt::Checked && !it->first.compare(handler_pair.first->text(0).toStdString()))
 							{
-								p3.first->setCheckState(0, Qt::Unchecked);
+								handler_pair.first->setCheckState(0, Qt::Unchecked);
 								break;
 							}
 						}
@@ -117,9 +110,9 @@ settingswindow::settingswindow(QWidget *parent)
 										  {});
 	}
 
-	treeviewitems.push_back(std::make_pair("Regions to Scan", itemdatamap));
+	treeview_items.push_back(std::make_pair("Regions to Scan", item_values));
 
-	this->insert(treeviewitems);
+	this->insert(treeview_items);
 
 	this->newsignature_randomstring = 0;
 }
@@ -128,25 +121,25 @@ settingswindow::~settingswindow()
 {
 }
 
-size_t settingswindow::insert(size_t treewidget, const treeviewitem_t &item)
+size_t settingswindow::insert(size_t tree_widget, const treeviewitem_t &item)
 {
-	if (treewidgets.size() >= treewidget)
+	if (tree_widgets.size() >= tree_widget)
 	{
 		QTreeWidgetItem *pitem = new QTreeWidgetItem({QString::fromStdString(item.first)});
 
-		std::shared_ptr<QTreeWidget> ptreewidget = treewidgets.at(treewidget);
+		std::shared_ptr<QTreeWidget> ptreewidget = tree_widgets.at(tree_widget);
 
-		for (const std::pair<std::string, std::pair<std::function<void(bool)>, std::unordered_map<uint32_t, QWidget *>>> &p : item.second)
+		for (const auto &p : item.second)
 		{
 			QTreeWidgetItem *treewidgetitem = check_treewidgetitem(p.first, p.second.first);
 			pitem->addChild(treewidgetitem);
 
-			for (const std::pair<uint32_t, QWidget *> &p2 : p.second.second)
+			for (const auto &q : p.second.second)
 			{
-				ptreewidget->setItemWidget(treewidgetitem, p2.first, p2.second);
+				ptreewidget->setItemWidget(treewidgetitem, q.first, q.second);
 			}
 
-			ptreewidget->setColumnCount(std::max(p.second.second.size() + 1, static_cast<uint32_t>(ptreewidget->columnCount())));
+			ptreewidget->setColumnCount(std::max(p.second.second.size() + 1, static_cast<size_t>(ptreewidget->columnCount())));
 
 			ptreewidget->header()->setStretchLastSection(false);
 			ptreewidget->header()->setSectionResizeMode(0, QHeaderView::Stretch);
@@ -155,20 +148,20 @@ size_t settingswindow::insert(size_t treewidget, const treeviewitem_t &item)
 		ptreewidget->addTopLevelItem(pitem);
 	}
 
-	return treewidget;
+	return tree_widget;
 }
 
-size_t settingswindow::insert(size_t treewidget, const std::vector<treeviewitem_t> &items)
+size_t settingswindow::insert(size_t tree_widget, const std::vector<treeviewitem_t> &items)
 {
-	if (treewidgets.size() >= treewidget)
+	if (tree_widgets.size() >= tree_widget)
 	{
 		for (size_t n = 0; n < items.size(); ++n)
 		{
-			insert(treewidget, items.at(n));
+			this->insert(tree_widget, items.at(n));
 		}
 	}
 
-	return treewidget;
+	return tree_widget;
 }
 
 size_t settingswindow::insert(const std::vector<std::string> &n)
@@ -188,22 +181,26 @@ size_t settingswindow::insert(const std::vector<std::string> &n)
 		}
 	}
 
-	connect(ptreewidget.get(), &QTreeWidget::itemChanged, [this](QTreeWidgetItem *item, int column) -> void {
-		if (check_treewidgetitem_handler.find(item) != check_treewidgetitem_handler.end())
+	connect(ptreewidget.get(), &QTreeWidget::itemChanged, [this](QTreeWidgetItem *item, int column) -> void 
+	{
+		if (check_treewidgetitem_handler.count(item))
 		{
-			if (item->checkState(column) == Qt::Checked)
+			switch (item->checkState(column))
 			{
-				check_treewidgetitem_handler.at(item)(true);
-			}
-			else if (item->checkState(column) == Qt::Unchecked)
-			{
-				check_treewidgetitem_handler.at(item)(false);
+			case Qt::Checked:
+				this->check_treewidgetitem_handler.at(item)(true);
+				break;
+
+			case Qt::Unchecked:
+				this->check_treewidgetitem_handler.at(item)(false);
+				break;
 			}
 		}
 	});
 
 	ptreewidget->setContextMenuPolicy(Qt::CustomContextMenu);
-	connect(ptreewidget.get(), &QTreeWidget::customContextMenuRequested, [=](const QPoint &) {
+	connect(ptreewidget.get(), &QTreeWidget::customContextMenuRequested, [=](const QPoint &) 
+	{
 		if (ptreewidget->selectedItems().empty())
 		{
 			return;
@@ -211,36 +208,37 @@ size_t settingswindow::insert(const std::vector<std::string> &n)
 
 		QTreeWidgetItem *item = ptreewidget->selectedItems().at(0);
 		std::unique_ptr<QMenu> menu = std::make_unique<QMenu>(this);
-		QAction *checkgroup = nullptr, *uncheckgroup = nullptr;
+		QAction *check_group_action = nullptr, *uncheck_group_action = nullptr;
 
-		if (check_treewidgetitem_handler.find(item) == check_treewidgetitem_handler.end())
+		//does not contain
+		if (!this->check_treewidgetitem_handler.count(item))
 		{
-			checkgroup = menu->addAction("Check " + item->text(0));
-			uncheckgroup = menu->addAction("Uncheck " + item->text(0));
+			check_group_action = menu->addAction("Check " + item->text(0));
+			uncheck_group_action = menu->addAction("Uncheck " + item->text(0));
 
 			menu->addSeparator();
 		}
 
-		QAction *checkall = menu->addAction("Check All");
-		QAction *uncheckall = menu->addAction("Uncheck All");
+		QAction *check_all_action = menu->addAction("Check All");
+		QAction *uncheck_all_action = menu->addAction("Uncheck All");
 
 		menu->addSeparator();
 
-		QAction *expandall = menu->addAction("Expand All");
-		QAction *collapseall = menu->addAction("Collapse All");
+		QAction *expand_all_action = menu->addAction("Expand All");
+		QAction *collapse_all_action = menu->addAction("Collapse All");
 
-		QAction *result = menu->exec(QCursor::pos());
-		if (result == checkgroup || result == uncheckgroup)
+		QAction *performed_action = menu->exec(QCursor::pos());
+		if (performed_action == check_group_action || performed_action == uncheck_group_action)
 		{
-			Qt::CheckState state = result == checkgroup ? Qt::Checked : Qt::Unchecked;
+			Qt::CheckState state = performed_action == check_group_action ? Qt::Checked : Qt::Unchecked;
 			for (int32_t i = 0; i < item->childCount(); ++i)
 			{
 				item->child(i)->setCheckState(0, state);
 			}
 		}
-		else if (result == checkall || result == uncheckall)
+		else if (performed_action == check_all_action || performed_action == uncheck_all_action)
 		{
-			Qt::CheckState state = result == checkall ? Qt::Checked : Qt::Unchecked;
+			Qt::CheckState state = performed_action == check_all_action ? Qt::Checked : Qt::Unchecked;
 			for (int32_t i = 0; i < ptreewidget->topLevelItemCount(); ++i)
 			{
 				for (int32_t j = 0; j < ptreewidget->topLevelItem(i)->childCount(); ++j)
@@ -249,20 +247,20 @@ size_t settingswindow::insert(const std::vector<std::string> &n)
 				}
 			}
 		}
-		else if (result == expandall || result == collapseall)
+		else if (performed_action == expand_all_action || performed_action == collapse_all_action)
 		{
 			for (int32_t i = 0; i < ptreewidget->topLevelItemCount(); ++i)
 			{
-				ptreewidget->topLevelItem(i)->setExpanded(expandall == result);
+				ptreewidget->topLevelItem(i)->setExpanded(expand_all_action == performed_action);
 			}
 		}
 	});
 
 	layout->addWidget(ptreewidget.get());
 
-	treewidgets.push_back(ptreewidget);
+	tree_widgets.push_back(ptreewidget);
 
-	return treewidgets.size() - 1;
+	return tree_widgets.size() - 1;
 }
 
 size_t settingswindow::insert(const std::vector<treeviewitem_t> &items)
@@ -277,10 +275,10 @@ size_t settingswindow::insert(const std::vector<std::string> &n, const std::vect
 
 QTreeWidgetItem *settingswindow::check_treewidgetitem(const std::string &n, const std::function<void(bool)> &handler)
 {
-	QTreeWidgetItem *p = new QTreeWidgetItem({QString::fromStdString(n.c_str())});
-	p->setCheckState(0, Qt::CheckState::Unchecked);
-	check_treewidgetitem_handler[p] = handler;
-	return p;
+	QTreeWidgetItem *ptr = new QTreeWidgetItem({QString::fromStdString(n.c_str())});
+	ptr->setCheckState(0, Qt::CheckState::Unchecked);
+	check_treewidgetitem_handler[ptr] = handler;
+	return ptr;
 }
 
 bool settingswindow::get_newsignature_randomstring()
@@ -288,11 +286,11 @@ bool settingswindow::get_newsignature_randomstring()
 	return newsignature_randomstring;
 }
 
-std::vector<std::pair<unsigned long, size_t>> settingswindow::get_selected_regions()
+std::vector<std::pair<address_t, size_t>> settingswindow::get_selected_regions()
 {
-	std::vector<std::pair<unsigned long, size_t>> whitelisted_regions;
+	std::vector<std::pair<address_t, size_t>> whitelisted_regions;
 
-	for (const std::pair<std::string, bool> &p : regionselection)
+	for (const std::pair<std::string, bool> &p : region_selection)
 	{
 		if (p.second)
 		{

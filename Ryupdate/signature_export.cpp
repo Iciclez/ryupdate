@@ -1,32 +1,32 @@
 #include "signature_export.hpp"
 #include "code_generator.hpp"
 #include <fstream>
+#include <sstream>
 #include <unordered_map>
 #include <unordered_set>
 #include <algorithm>
 
-signature_export::signature_export(const std::unordered_map<std::string, std::shared_ptr<signatureitem>> &signatures, const std::string &classname)
+signature_export::signature_export(const std::unordered_map<std::string, std::shared_ptr<signature_item>> &signatures, const std::string &class_name)
 {
-	this->classname = classname;
-	if (this->classname.empty())
+	this->class_name = class_name;
+	if (this->class_name.empty())
 	{
-		this->classname = "addresses";
+		this->class_name = "addresses";
 	}
 
-	std::unordered_map<std::string, uint32_t> addresses;
+	std::unordered_map<std::string, address_t> addresses;
 	std::unordered_set<std::string> errors;
-	std::unordered_map<std::string, std::string> otherdata;
+	std::unordered_map<std::string, std::string> tag;
 
-	for (const std::pair<std::string, std::shared_ptr<signatureitem>> &p : signatures)
+	for (const std::pair<std::string, std::shared_ptr<signature_item>> &p : signatures)
 	{
 		std::string n = p.second->data;
 		size_t x = 0;
-		for (x = 0; x < n.size() && isxdigit(n.at(x)); ++x)
-			;
+		for (x = 0; x < n.size() && isxdigit(n.at(x)); ++x);
 
 		if (x == n.size())
 		{
-			addresses[p.first] = std::stoi(n, nullptr, 16);
+			addresses[p.first] = std::stoull(n, nullptr, 16);
 		}
 		else if (!n.compare("ERROR"))
 		{
@@ -34,34 +34,34 @@ signature_export::signature_export(const std::unordered_map<std::string, std::sh
 		}
 		else
 		{
-			otherdata[p.first] = n;
+			tag[p.first] = n;
 		}
 	}
 
-	code_generator s(this->classname);
+	code_generator generator(this->class_name);
 	implementation constructor;
 
-	for (const std::pair<std::string, uint32_t> &p : addresses)
+	for (const std::pair<std::string, address_t> &p : addresses)
 	{
-		s.insert_field(code_generator::access_specifier::private_access, "unsigned long " + p.first);
+		generator.insert_field(code_generator::access_specifier::private_access, "unsigned long " + p.first);
 
 		constructor.write("\t//" + signatures.at(p.first)->signature + " [Result: " + std::to_string(signatures.at(p.first)->result) + "]");
 		std::string comment = signatures.at(p.first)->comments;
 		constructor.write_line(comment.empty() ? "" : " {" + comment + "}");
-		constructor.write_line("\tthis->" + p.first + " = 0x" + signatureitem::uint_to_string<unsigned long>(p.second) + ";\n");
+		constructor.write_line("\tthis->" + p.first + " = 0x" + signature_item::uint_to_string<address_t>(p.second) + ";\n");
 
 		implementation impl;
 		impl.write("\treturn this->" + p.first + ";");
 
-		function f(function::access_specifier::public_access, std::make_pair<std::string, std::string>("get_" + p.first, "unsigned long"));
-		f.set_implementation(impl);
+		function func(function::access_specifier::public_access, std::make_pair<std::string, std::string>("get_" + p.first, "unsigned long"));
+		func.set_implementation(impl);
 
-		s.insert_function(f);
+		generator.insert_function(func);
 	}
 
-	for (const std::pair<std::string, std::string> &p : otherdata)
+	for (const std::pair<std::string, std::string> &p : tag)
 	{
-		s.insert_field(code_generator::access_specifier::private_access, "std::string " + p.first);
+		generator.insert_field(code_generator::access_specifier::private_access, "std::string " + p.first);
 
 		constructor.write("\t//" + signatures.at(p.first)->signature + " [Result: " + std::to_string(signatures.at(p.first)->result) + "]");
 		std::string comment = signatures.at(p.first)->comments;
@@ -71,15 +71,15 @@ signature_export::signature_export(const std::unordered_map<std::string, std::sh
 		implementation impl;
 		impl.write("\treturn this->" + p.first + ";");
 
-		function f(function::access_specifier::public_access, std::make_pair<std::string, std::string>("get_" + p.first, "std::string"));
-		f.set_implementation(impl);
+		function func(function::access_specifier::public_access, std::make_pair<std::string, std::string>("get_" + p.first, "std::string"));
+		func.set_implementation(impl);
 
-		s.insert_function(f);
+		generator.insert_function(func);
 	}
 
 	for (const std::string &p : errors)
 	{
-		s.insert_field(code_generator::access_specifier::private_access, "unsigned long " + p);
+		generator.insert_field(code_generator::access_specifier::private_access, "unsigned long " + p);
 
 		constructor.write("\t//" + signatures.at(p)->signature + " [Result: " + std::to_string(signatures.at(p)->result) + "]");
 		std::string comment = signatures.at(p)->comments;
@@ -89,21 +89,21 @@ signature_export::signature_export(const std::unordered_map<std::string, std::sh
 		implementation impl;
 		impl.write("\treturn this->" + p + ";");
 
-		function f(function::access_specifier::public_access, std::make_pair<std::string, std::string>("get_" + p, "unsigned long"));
-		f.set_implementation(impl);
+		function func(function::access_specifier::public_access, std::make_pair<std::string, std::string>("get_" + p, "unsigned long"));
+		func.set_implementation(impl);
 
-		s.insert_function(f);
+		generator.insert_function(func);
 	}
 
-	s.set_constructor(constructor);
+	generator.set_constructor(constructor);
 
 	//s.include_header.push_back("#include <cstdint>");
-	s.include_header.push_back("#include <string>");
-	s.include_source.push_back("#include \"" + this->classname + ".hpp\"");
-	s.include_source.push_back("\n#define SIGNATURE_ERROR static_cast<unsigned long>(-1)");
+	generator.include_header.push_back("#include <string>");
+	generator.include_source.push_back("#include \"" + this->class_name + ".hpp\"");
+	generator.include_source.push_back("\n#define SIGNATURE_ERROR static_cast<unsigned long>(-1)");
 
-	this->header = s.get_header();
-	this->source = s.get_source();
+	this->header = generator.get_header();
+	this->source = generator.get_source();
 }
 
 signature_export::~signature_export()
@@ -120,9 +120,9 @@ bool signature_export::save_header(const std::string &path)
 	return signature_export::save(path, this->header);
 }
 
-bool signature_export::save(const std::string &filepath, const std::string &data)
+bool signature_export::save(const std::string &file, const std::string &data)
 {
-	std::ofstream fs(filepath);
+	std::ofstream fs(file);
 	if (fs.is_open())
 	{
 		fs << data;
@@ -134,7 +134,7 @@ bool signature_export::save(const std::string &filepath, const std::string &data
 	return false;
 }
 
-std::string signature_export::make_header(const std::unordered_map<std::string, std::shared_ptr<signatureitem>> &signatures, const std::string &prefix)
+std::string signature_export::make_header(const std::unordered_map<std::string, std::shared_ptr<signature_item>> &signatures, const std::string &prefix)
 {
 	std::string signature_prefix = prefix;
 	if (!signature_prefix.empty())
@@ -145,60 +145,63 @@ std::string signature_export::make_header(const std::unordered_map<std::string, 
 		}
 	}
 
-	std::unordered_set<std::string> definenames;
-	std::string text = "#define SIGNATURE_ERROR -1\n\n";
-	for (const std::pair<std::string, std::shared_ptr<signatureitem>> &p : signatures)
+	std::unordered_set<std::string> defined_names;
+	std::stringstream ss;
+	ss << "#define SIGNATURE_ERROR -1\n\n";
+	for (const std::pair<std::string, std::shared_ptr<signature_item>> &p : signatures)
 	{
-		text += "//" + p.second->signature + " [Result: " + std::to_string(p.second->result) + "]";
+		ss << "//" << p.second->signature << " [Result: " << std::to_string(p.second->result) << ']';
 		std::string comment = p.second->comments;
-		text += comment.empty() ? "" : " {" + comment + "}";
-		text += "\n";
+		if (!comment.empty())
+		{
+			ss << " {" << comment << '}';
+		}
+		ss << '\n';
 
 		std::string define_name = signature_prefix + p.first;
 		std::transform(define_name.begin(), define_name.end(), define_name.begin(), ::toupper);
 
-		if (definenames.find(define_name) == definenames.end())
+		if (!defined_names.count(define_name))
 		{
-			definenames.insert(define_name);
+			defined_names.insert(define_name);
 		}
 		else
 		{
-			//contains
-			while (definenames.find(define_name) != definenames.end())
+			//while set contains define_name
+			while (defined_names.count(define_name))
 			{
 				define_name = "_" + define_name;
 			}
 
-			definenames.insert(define_name);
+			defined_names.insert(define_name);
 		}
 
 		if (!p.second->data.compare("ERROR"))
 		{
-			text += "#define " + define_name + " SIGNATURE_ERROR";
+			ss << "#define " << define_name << " SIGNATURE_ERROR";
 		}
 		else
 		{
 			std::string n = p.second->data;
 			size_t x = 0;
-			for (x = 0; x < n.size() && isxdigit(n.at(x)); ++x)
-				;
+			for (x = 0; x < n.size() && isxdigit(n.at(x)); ++x);
 
 			if (x == n.size())
 			{
 				//address
-				text += "#define " + define_name + " 0x" + signatureitem::uint_to_string<unsigned long>(std::stoi(p.second->data, nullptr, 16));
+				ss << "#define " << define_name << " 0x" << signature_item::uint_to_string<address_t>(std::stoull(p.second->data, nullptr, 16));
 			}
 			else
 			{
 				//string
-				text += "#define " + define_name + " \"" + p.second->data + "\"";
+				ss << "#define " << define_name << " \"" << p.second->data << "\"";
 			}
 		}
 
-		text += "\n\n";
+		ss << "\n\n";
 	}
 
-	return text;
+	return ss.str();
 }
 
 /*

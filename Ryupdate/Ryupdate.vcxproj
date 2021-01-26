@@ -23,7 +23,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <PlatformToolset>v142</PlatformToolset>
-    <CharacterSet>Unicode</CharacterSet>
+    <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings" />
@@ -45,10 +45,10 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>C:\Projects\Zephyrus\Zephyrus;C:\Qt\5.12.7\Src\qtbase\include\QtGui;C:\Qt\5.12.7\Src\qtbase\include\QtWidgets;C:\Qt\5.12.7\Src\qtbase\include\QtCore;C:\Qt\5.12.7\Src\qtbase\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(QTDIR)\include\QtGui;$(QTDIR)\include\QtWidgets;$(QTDIR)\include\QtCore;$(QTDIR)\include;C:\repositories\lib\zephyrus\Zephyrus;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
-      <AdditionalLibraryDirectories>C:\Qt\5.12.7\Src\qtbase\plugins\styles;C:\Qt\5.12.7\Src\qtbase\plugins\imageformats;C:\Qt\5.12.7\Src\qtbase\plugins\platforms;C:\Qt\5.12.7\Src\qtbase\lib;C:\Projects\Zephyrus\Zephyrus;C:\Projects\Zephyrus\Release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(QTDIR)\plugins\styles;$(QTDIR)\plugins\imageformats;$(QTDIR)\plugins\platforms;$(QTDIR)\lib;C:\repositories\lib\zephyrus\Zephyrus;C:\repositories\lib\zephyrus\Release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>Qt5Core.lib;Qt5Widgets.lib;Qt5Gui.lib;Qt5EventDispatcherSupport.lib;Qt5AccessibilitySupport.lib;Qt5FontDatabaseSupport.lib;Qt5ThemeSupport.lib;d3d9.lib;dxguid.lib;libGLESv2.lib;libEGL.lib;preprocessor.lib;translator.lib;UxTheme.lib;Ws2_32.lib;Version.lib;Winmm.lib;Dwmapi.lib;Imm32.lib;Zephyrus.lib;Detours.lib;Dbghelp.lib;Shlwapi.lib;Netapi32.lib;Userenv.lib;Wtsapi32.lib;qtpcre2.lib;Qt5WindowsUIAutomationSupport.lib;qtharfbuzz.lib;qtlibpng.lib;qwindows.lib;qtfreetype.lib;qwindowsvistastyle.lib;qico.lib;qjpeg.lib;qgif.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <FullProgramDatabaseFile>
       </FullProgramDatabaseFile>
@@ -63,7 +63,7 @@
     <ClCompile Include="GeneratedFiles\Debug\moc_settingswindow.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
     </ClCompile>
-    <ClCompile Include="GeneratedFiles\Debug\moc_signatureitem.cpp">
+    <ClCompile Include="GeneratedFiles\Debug\moc_signature_item.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="GeneratedFiles\qrc_resource.cpp">
@@ -78,29 +78,29 @@
     <ClCompile Include="GeneratedFiles\Release\moc_settingswindow.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
     </ClCompile>
-    <ClCompile Include="GeneratedFiles\Release\moc_signatureitem.cpp">
+    <ClCompile Include="GeneratedFiles\Release\moc_signature_item.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="mainwindow.cpp" />
     <ClCompile Include="ryupdate.cpp" />
     <ClCompile Include="code_generator.cpp" />
     <ClCompile Include="settingswindow.cpp" />
-    <ClCompile Include="signatureitem.cpp" />
+    <ClCompile Include="signature_item.cpp" />
     <ClCompile Include="signature_export.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="json.hpp" />
     <ClInclude Include="ryupdate.hpp" />
     <ClInclude Include="code_generator.hpp" />
-    <CustomBuild Include="signatureitem.hpp">
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(QTDIR)\bin\moc.exe;%(FullPath)</AdditionalInputs>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Moc%27ing signatureitem.hpp...</Message>
+    <CustomBuild Include="signature_item.hpp">
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(QTDIR)\bin\moc.exe;%(FullPath);$(QTDIR)\bin\moc.exe;%(FullPath)</AdditionalInputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Moc%27ing %(Identity)...</Message>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">.\GeneratedFiles\$(ConfigurationName)\moc_%(Filename).cpp</Outputs>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">"$(QTDIR)\bin\moc.exe"  "%(FullPath)" -o ".\GeneratedFiles\$(ConfigurationName)\moc_%(Filename).cpp"  -DUNICODE -D_UNICODE -DWIN32 -DWIN64 -D%(PreprocessorDefinitions) </Command>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(QTDIR)\bin\moc.exe;%(FullPath)</AdditionalInputs>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Moc%27ing signatureitem.hpp...</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">"$(QTDIR)\bin\moc.exe"  "%(FullPath)" -o ".\GeneratedFiles\$(ConfigurationName)\moc_%(Filename).cpp"  -DUNICODE -D_UNICODE -DWIN32 -DWIN64 -D%(PreprocessorDefinitions)</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(QTDIR)\bin\moc.exe;%(FullPath);$(QTDIR)\bin\moc.exe;%(FullPath)</AdditionalInputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Moc%27ing %(Identity)...</Message>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">.\GeneratedFiles\$(ConfigurationName)\moc_%(Filename).cpp</Outputs>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">"$(QTDIR)\bin\moc.exe"  "%(FullPath)" -o ".\GeneratedFiles\$(ConfigurationName)\moc_%(Filename).cpp"  -D_WINDLL -D%(PreprocessorDefinitions)  "-IC:\Projects\Zephyrus\Zephyrus" "-IC:\Qt\5.12.7\Src\qtbase\include\QtGui" "-IC:\Qt\5.12.7\Src\qtbase\include\QtWidgets" "-IC:\Qt\5.12.7\Src\qtbase\include\QtCore" "-IC:\Qt\5.12.7\Src\qtbase\include"</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">"$(QTDIR)\bin\moc.exe"  "%(FullPath)" -o ".\GeneratedFiles\$(ConfigurationName)\moc_%(Filename).cpp"  -D_WINDLL -D%(PreprocessorDefinitions) "-I$(QTDIR)\include\QtGui" "-I$(QTDIR)\include\QtWidgets" "-I$(QTDIR)\include\QtCore" "-I$(QTDIR)\include" "-IC:\repositories\lib\zephyrus\Zephyrus"</Command>
     </CustomBuild>
     <ClInclude Include="signature_export.hpp" />
     <CustomBuild Include="settingswindow.hpp">
@@ -151,7 +151,7 @@
   </ImportGroup>
   <ProjectExtensions>
     <VisualStudio>
-      <UserProperties lreleaseOptions="" lupdateOnBuild="0" lupdateOptions="" MocDir=".\GeneratedFiles\$(ConfigurationName)" MocOptions="" Qt5Version_x0020_Win32="qt-5.12.7_msvc_static" RccDir=".\GeneratedFiles" UicDir=".\GeneratedFiles" />
+      <UserProperties lreleaseOptions="" lupdateOnBuild="0" lupdateOptions="" MocDir=".\GeneratedFiles\$(ConfigurationName)" MocOptions="" Qt5Version_x0020_Win32="qtbase" RccDir=".\GeneratedFiles" UicDir=".\GeneratedFiles" />
     </VisualStudio>
   </ProjectExtensions>
 </Project>

@@ -37,55 +37,55 @@
 using namespace nlohmann;
 
 mainwindow::mainwindow()
-	: tablewidget(std::make_unique<QTableWidget>(this)),
-	  statuslabel(std::make_unique<QLabel>(this)),
-	  progressbar(std::make_unique<QProgressBar>(this)),
+	: table_widget(std::make_unique<QTableWidget>(this)),
+	  status_label(std::make_unique<QLabel>(this)),
+	  progress_bar(std::make_unique<QProgressBar>(this)),
 	  settings(std::make_unique<settingswindow>(this))
 {
-	this->tablewidget->setAlternatingRowColors(true);
-	this->tablewidget->setColumnCount(6);
-	this->tablewidget->setHorizontalHeaderLabels(QStringList({"Name", "Type", "Signature", "Result", "Scanned Data", "Comments"}));
-	this->tablewidget->horizontalHeader()->setSectionResizeMode(2, QHeaderView::Stretch);
-	this->tablewidget->setSelectionBehavior(QAbstractItemView::SelectRows);
-	this->tablewidget->horizontalHeader()->setHighlightSections(false);
-	this->tablewidget->verticalHeader()->setHighlightSections(false);
-	this->tablewidget->verticalHeader()->setDefaultSectionSize(18);
-	this->tablewidget->setSortingEnabled(true);
-	this->tablewidget->setContextMenuPolicy(Qt::CustomContextMenu);
-	this->tablewidget->setFont(QFont("Segoe UI", 8));
+	this->table_widget->setAlternatingRowColors(true);
+	this->table_widget->setColumnCount(6);
+	this->table_widget->setHorizontalHeaderLabels(QStringList({"Name", "Type", "Signature", "Result", "Scanned Data", "Comments"}));
+	this->table_widget->horizontalHeader()->setSectionResizeMode(2, QHeaderView::Stretch);
+	this->table_widget->setSelectionBehavior(QAbstractItemView::SelectRows);
+	this->table_widget->horizontalHeader()->setHighlightSections(false);
+	this->table_widget->verticalHeader()->setHighlightSections(false);
+	this->table_widget->verticalHeader()->setDefaultSectionSize(18);
+	this->table_widget->setSortingEnabled(true);
+	this->table_widget->setContextMenuPolicy(Qt::CustomContextMenu);
+	this->table_widget->setFont(QFont("Segoe UI", 8));
 
-	this->progressbar->setMaximumHeight(20);
-	this->progressbar->setMaximumWidth(200);
-	this->progressbar->setValue(0);
-	this->progressbar->setMaximum(1);
-	this->progressbar->setTextVisible(true);
+	this->progress_bar->setMaximumHeight(20);
+	this->progress_bar->setMaximumWidth(200);
+	this->progress_bar->setValue(0);
+	this->progress_bar->setMaximum(1);
+	this->progress_bar->setTextVisible(true);
 
-	this->set_menubar();
-	this->set_statusbar();
+	this->set_menu_bar();
+	this->set_status_bar();
 
 	this->set_properties();
-	this->set_messagehandler();
+	this->set_message_handler();
 
-	this->ryupdate_path = []() -> std::wstring {
-		wchar_t **app_data = reinterpret_cast<wchar_t **>(CoTaskMemAlloc(MAX_PATH));
+	this->ryupdate_path = []() -> std::string {
+		wchar_t** app_data = reinterpret_cast<wchar_t**>(CoTaskMemAlloc(MAX_PATH));
 		if (app_data == 0)
 		{
-			return std::wstring();
+			return std::string();
 		}
 
 		if (SHGetKnownFolderPath(FOLDERID_RoamingAppData, 0, 0, app_data) != S_OK)
 		{
 			CoTaskMemFree(app_data);
-			return std::wstring();
+			return std::string();
 		}
 
-		PathCombine(*app_data, *app_data, L"Ryupdate");
+		PathCombineW(*app_data, *app_data, L"Ryupdate");
 
 		std::wstring ryupdate_path(*app_data);
 
 		CoTaskMemFree(app_data);
 
-		return ryupdate_path;
+		return std::string(ryupdate_path.begin(), ryupdate_path.end());
 	}();
 
 	if (!PathFileExists(this->ryupdate_path.c_str()))
@@ -135,13 +135,13 @@ bool mainwindow::insert_item()
 			text = "n" + text;
 		}
 
-		return this->insert_item(std::make_shared<signatureitem>(this, text.toStdString()));
+		return this->insert_item(std::make_shared<signature_item>(this, text.toStdString()));
 	}
 
 	return false;
 }
 
-bool mainwindow::insert_item(const std::shared_ptr<signatureitem> &signature)
+bool mainwindow::insert_item(const std::shared_ptr<signature_item> &signature)
 {
 	if (isdigit(signature->name.at(0)))
 	{
@@ -156,26 +156,26 @@ bool mainwindow::insert_item(const std::shared_ptr<signatureitem> &signature)
 
 	signatures[signature->name] = signature;
 
-	int32_t r = this->tablewidget->rowCount();
-	this->tablewidget->insertRow(r);
+	int32_t r = this->table_widget->rowCount();
+	this->table_widget->insertRow(r);
 
-	this->tablewidget->setItem(r, 0, signature->namewidget);
-	this->tablewidget->setCellWidget(r, 1, signature->typewidget.get());
-	this->tablewidget->setItem(r, 2, signature->signaturewidget);
-	this->tablewidget->setCellWidget(r, 3, signature->resultwidget.get());
-	this->tablewidget->setItem(r, 4, signature->datawidget);
-	this->tablewidget->setItem(r, 5, signature->commentswidget);
+	this->table_widget->setItem(r, 0, signature->name_widget);
+	this->table_widget->setCellWidget(r, 1, signature->type_widget.get());
+	this->table_widget->setItem(r, 2, signature->signature_widget);
+	this->table_widget->setCellWidget(r, 3, signature->result_widget.get());
+	this->table_widget->setItem(r, 4, signature->data_widget);
+	this->table_widget->setItem(r, 5, signature->comments_widget);
 
-	this->progressbar->setValue(0);
-	this->progressbar->setMaximum(this->tablewidget->rowCount());
+	this->progress_bar->setValue(0);
+	this->progress_bar->setMaximum(this->table_widget->rowCount());
 
 	return true;
 }
 
 void mainwindow::remove_selected_item()
 {
-	QList<QTableWidgetItem *> items = tablewidget->selectedItems();
-	if (items.size() / tablewidget->columnCount() == tablewidget->rowCount())
+	QList<QTableWidgetItem *> items = table_widget->selectedItems();
+	if (items.size() / table_widget->columnCount() == table_widget->rowCount())
 	{
 		this->clear();
 		return;
@@ -183,15 +183,15 @@ void mainwindow::remove_selected_item()
 
 	for (const QTableWidgetItem *p : items)
 	{
-		if (p->column() == tablewidget->columnCount() - 1)
+		if (p->column() == table_widget->columnCount() - 1)
 		{
 			int32_t row = p->row();
 			delete p;
-			tablewidget->removeRow(row);
+			table_widget->removeRow(row);
 		}
 		else if (p->column() == 0)
 		{
-			signatures.erase(tablewidget->item(p->row(), 0)->text().toStdString());
+			signatures.erase(table_widget->item(p->row(), 0)->text().toStdString());
 		}
 		else
 		{
@@ -199,23 +199,23 @@ void mainwindow::remove_selected_item()
 		}
 	}
 
-	this->progressbar->setValue(0);
+	this->progress_bar->setValue(0);
 }
 
 void mainwindow::clear()
 {
-	this->tablewidget->clearSelection();
+	this->table_widget->clearSelection();
 
-	for (int32_t i = 0; i < tablewidget->rowCount(); ++i)
+	for (int32_t i = 0; i < table_widget->rowCount(); ++i)
 	{
-		for (int32_t j = 0; j < tablewidget->columnCount(); ++j)
+		for (int32_t j = 0; j < table_widget->columnCount(); ++j)
 		{
-			delete tablewidget->item(i, j);
+			delete table_widget->item(i, j);
 		}
 	}
 
-	this->progressbar->setValue(0);
-	this->tablewidget->setRowCount(0);
+	this->progress_bar->setValue(0);
+	this->table_widget->setRowCount(0);
 
 	this->signatures.clear();
 }
@@ -227,17 +227,17 @@ void mainwindow::update_data(const std::string &name)
 
 void mainwindow::update_all_address()
 {
-	this->progressbar->setValue(0);
-	for (const std::pair<std::string, std::shared_ptr<signatureitem>> &p : signatures)
+	this->progress_bar->setValue(0);
+	for (const std::pair<std::string, std::shared_ptr<signature_item>> &p : signatures)
 	{
 		p.second->update_data(this->region());
-		this->progressbar->setValue(this->progressbar->value() + 1);
+		this->progress_bar->setValue(this->progress_bar->value() + 1);
 	}
 }
 
-void mainwindow::insert_json(const std::string &filepath)
+void mainwindow::insert_json(const std::string &file)
 {
-	std::ifstream fs(filepath);
+	std::ifstream fs(file);
 	std::stringstream ss;
 	ss << fs.rdbuf();
 
@@ -250,7 +250,7 @@ void mainwindow::insert_json(const std::string &filepath)
 
 	for (const basic_json<> &n : j)
 	{
-		this->insert_item(std::make_shared<signatureitem>(this,
+		this->insert_item(std::make_shared<signature_item>(this,
 														  n["name"],
 														  n["type"],
 														  n["signature"],
@@ -260,10 +260,10 @@ void mainwindow::insert_json(const std::string &filepath)
 	}
 }
 
-void mainwindow::export_json(const std::string &filepath)
+void mainwindow::export_json(const std::string &file)
 {
 	json j;
-	for (const std::pair<std::string, std::shared_ptr<signatureitem>> &p : signatures)
+	for (const std::pair<std::string, std::shared_ptr<signature_item>> &p : signatures)
 	{
 		j[p.first]["name"] = p.second->name;
 		j[p.first]["type"] = p.second->type;
@@ -273,7 +273,7 @@ void mainwindow::export_json(const std::string &filepath)
 		j[p.first]["comments"] = p.second->comments;
 	}
 
-	std::ofstream fs(filepath);
+	std::ofstream fs(file);
 	if (fs.is_open())
 	{
 		fs << j.dump();
@@ -281,7 +281,7 @@ void mainwindow::export_json(const std::string &filepath)
 	}
 }
 
-void mainwindow::set_stylesheet(const std::tuple<byte, byte, byte> &color)
+void mainwindow::set_style_sheet(const std::tuple<uint8_t, uint8_t, uint8_t> &color)
 {
 	//a blue color: <0, 120, 210>;
 	//a red color: <230, 80, 120>;
@@ -384,58 +384,58 @@ void mainwindow::set_properties()
 	this->setWindowTitle("Ryupdate");
 	this->resize(1300, 700);
 
-	this->setCentralWidget(this->tablewidget.get());
+	this->setCentralWidget(this->table_widget.get());
 
 	this->setAcceptDrops(true);
 }
 
-void mainwindow::set_messagehandler()
+void mainwindow::set_message_handler()
 {
-	connect(this->tablewidget.get(), &QTableWidget::customContextMenuRequested, [this](const QPoint &) {
+	connect(this->table_widget.get(), &QTableWidget::customContextMenuRequested, [this](const QPoint &) {
 		std::unique_ptr<QMenu> menu = std::make_unique<QMenu>(this);
 
-		QAction *pinsert = menu->addAction("Insert Signature Item");
-		QAction *premove = menu->addAction("Remove Signature Item");
-		QAction *pduplicate = menu->addAction("Duplicate Signature Item");
+		QAction *insert_action = menu->addAction("Insert Signature Item");
+		QAction *remove_action = menu->addAction("Remove Signature Item");
+		QAction *duplicate_action = menu->addAction("Duplicate Signature Item");
 		menu->addSeparator();
-		QAction *pgeneratesignature = menu->addAction("Generate Signature");
+		QAction *generate_signature_action = menu->addAction("Generate Signature");
 		menu->addSeparator();
-		QAction *pupdate = menu->addAction("Update Signature");
-		QAction *pupdateall = menu->addAction("Update All Signatures");
+		QAction *update_action = menu->addAction("Update Signature");
+		QAction *update_all_action = menu->addAction("Update All Signatures");
 		menu->addSeparator();
-		QAction *pcopysignaturedata = menu->addAction("Copy Signature Data");
+		QAction *copy_signature_data_action = menu->addAction("Copy Signature Data");
 		menu->addSeparator();
-		QAction *pclear = menu->addAction("Clear");
+		QAction *clear_action = menu->addAction("Clear");
 
-		QAction *p = menu->exec(QCursor::pos());
-		if (p == pinsert)
+		QAction *performed_action = menu->exec(QCursor::pos());
+		if (performed_action == insert_action)
 		{
 			this->insert_item();
 		}
-		else if (p == premove)
+		else if (performed_action == remove_action)
 		{
 			this->remove_selected_item();
 		}
-		else if (p == pclear)
+		else if (performed_action == clear_action)
 		{
 			this->clear();
 		}
-		else if (p == pduplicate)
+		else if (performed_action == duplicate_action)
 		{
-			if (this->tablewidget->currentRow() != -1)
+			if (this->table_widget->currentRow() != -1)
 			{
-				std::shared_ptr<signatureitem> item = signatures.at(this->tablewidget->item(this->tablewidget->currentRow(), 0)->text().toStdString());
+				std::shared_ptr<signature_item> item = signatures.at(this->table_widget->item(this->table_widget->currentRow(), 0)->text().toStdString());
 
 				bool ok = false;
 				QString text = QInputDialog::getText(this, "Ryupdate: Insert Signature Item", "Signature Name: ", QLineEdit::Normal, QString::fromStdString(item->name + "_"), &ok);
 
 				if (ok && !text.isEmpty())
 				{
-					this->insert_item(std::make_shared<signatureitem>(this, text.toStdString(), item->type, item->signature, item->result, item->data, item->comments));
+					this->insert_item(std::make_shared<signature_item>(this, text.toStdString(), item->type, item->signature, item->result, item->data, item->comments));
 				}
 			}
 		}
-		else if (p == pgeneratesignature)
+		else if (performed_action == generate_signature_action)
 		{
 			//we need address and size
 
@@ -446,8 +446,7 @@ void mainwindow::set_messagehandler()
 			if (QApplication::clipboard()->text().size() == 8)
 			{
 				int32_t n = 0;
-				for (n = 0; n < qtext.size() && isxdigit(qtext.at(n).toLatin1()); ++n)
-					;
+				for (n = 0; n < qtext.size() && isxdigit(qtext.at(n).toLatin1()); ++n);
 				if (n == qtext.size())
 				{
 					qtext = QApplication::clipboard()->text();
@@ -461,15 +460,15 @@ void mainwindow::set_messagehandler()
 			{
 				size_t x = text.find_first_of(':');
 
-				uint32_t address = std::stoi(text.substr(0, x), nullptr, 16);
-				size_t size = std::stoi(text.substr(x + 1));
+				address_t address = std::stoull(text.substr(0, x), nullptr, 16);
+				size_t size = std::stoul(text.substr(x + 1));
 
-				this->tablewidget->item(this->tablewidget->currentRow(), 2)->setText(QString::fromStdString(z.byte_to_string(z.readmemory(address, size))));
+				this->table_widget->item(this->table_widget->currentRow(), 2)->setText(QString::fromStdString(z.byte_to_string(z.readmemory(address, size))));
 			}
 		}
-		else if (p == pupdate)
+		else if (performed_action == update_action)
 		{
-			QList<QTableWidgetItem *> items = this->tablewidget->selectedItems();
+			QList<QTableWidgetItem *> items = this->table_widget->selectedItems();
 
 			for (const QTableWidgetItem *p : items)
 			{
@@ -479,15 +478,15 @@ void mainwindow::set_messagehandler()
 				}
 			}
 		}
-		else if (p == pupdateall)
+		else if (performed_action == update_all_action)
 		{
 			this->update_all_address();
 		}
-		else if (p == pcopysignaturedata)
+		else if (performed_action == copy_signature_data_action)
 		{
 			std::string text = "";
 
-			QList<QTableWidgetItem *> items = this->tablewidget->selectedItems();
+			QList<QTableWidgetItem *> items = this->table_widget->selectedItems();
 
 			for (const QTableWidgetItem *p : items)
 			{
@@ -501,10 +500,10 @@ void mainwindow::set_messagehandler()
 		}
 	});
 
-	connect(this->tablewidget.get(), &QTableWidget::itemChanged, [this](QTableWidgetItem *item) {
+	connect(this->table_widget.get(), &QTableWidget::itemChanged, [this](QTableWidgetItem *item) {
 		for (auto it = signatures.begin(); it != signatures.end(); ++it)
 		{
-			if (item == it->second->namewidget)
+			if (item == it->second->name_widget)
 			{
 				std::string newname = item->text().toStdString();
 				if (newname.empty() || isdigit(newname.at(0)))
@@ -516,7 +515,7 @@ void mainwindow::set_messagehandler()
 				//does not exist
 				if (signatures.count(newname) == 0)
 				{
-					std::shared_ptr<signatureitem> item = it->second;
+					std::shared_ptr<signature_item> item = it->second;
 					item->name = newname;
 
 					signatures.erase(it);
@@ -530,7 +529,7 @@ void mainwindow::set_messagehandler()
 
 				break;
 			}
-			if (item == it->second->signaturewidget)
+			if (item == it->second->signature_widget)
 			{
 				QString newsignature = item->text();
 				for (int32_t n = 0; n < newsignature.size(); ++n)
@@ -568,12 +567,12 @@ void mainwindow::set_messagehandler()
 				item->setText(QString::fromStdString(it->second->signature));
 				break;
 			}
-			if (item == it->second->commentswidget)
+			if (item == it->second->comments_widget)
 			{
 				it->second->comments = item->text().toStdString();
 				break;
 			}
-			if (item == it->second->datawidget)
+			if (item == it->second->data_widget)
 			{
 				it->second->data = item->text().toStdString();
 				break;
@@ -581,12 +580,12 @@ void mainwindow::set_messagehandler()
 		}
 	});
 
-	connect(this->tablewidget.get(), &QTableWidget::itemSelectionChanged, [this]() {
-		this->statuslabel->setText(QString::fromStdString(this->get_signature_data(this->tablewidget->currentRow())));
+	connect(this->table_widget.get(), &QTableWidget::itemSelectionChanged, [this]() {
+		this->status_label->setText(QString::fromStdString(this->get_signature_data(this->table_widget->currentRow())));
 	});
 }
 
-void mainwindow::set_menubar()
+void mainwindow::set_menu_bar()
 {
 	QMenu *pfilemenu = this->menuBar()->addMenu("File");
 	QMenu *peditmenu = this->menuBar()->addMenu("Edit");
@@ -600,7 +599,7 @@ void mainwindow::set_menubar()
 	});
 	pfilemenu->addSeparator();
 	pfilemenu->addAction("Open", this, [this]() {
-		QStringList list = QFileDialog::getOpenFileNames(this, QString(), QString::fromStdWString(this->ryupdate_path), "json file (*.json)");
+		QStringList list = QFileDialog::getOpenFileNames(this, QString(), QString::fromStdString(this->ryupdate_path), "json file (*.json)");
 		if (!list.empty())
 		{
 			this->clear();
@@ -611,7 +610,7 @@ void mainwindow::set_menubar()
 		}
 	});
 	pfilemenu->addAction("Open (Append)", this, [this]() {
-				 QStringList list = QFileDialog::getOpenFileNames(this, QString(), QString::fromStdWString(this->ryupdate_path), "json file (*.json)");
+				 QStringList list = QFileDialog::getOpenFileNames(this, QString(), QString::fromStdString(this->ryupdate_path), "json file (*.json)");
 				 for (int32_t n = 0; n < list.size(); ++n)
 				 {
 					 this->insert_json(list.at(n).toStdString());
@@ -620,7 +619,7 @@ void mainwindow::set_menubar()
 		->setShortcut(Qt::CTRL + Qt::Key_O);
 	pfilemenu->addSeparator();
 	pfilemenu->addAction("Save As...", this, [this]() {
-				 std::string filedialogpath = QFileDialog::getSaveFileName(this, QString(), QString::fromStdWString(this->ryupdate_path), "json file (*.json)").toStdString();
+				 std::string filedialogpath = QFileDialog::getSaveFileName(this, QString(), QString::fromStdString(this->ryupdate_path), "json file (*.json)").toStdString();
 				 if (!filedialogpath.empty())
 				 {
 					 this->export_json(filedialogpath);
@@ -634,7 +633,7 @@ void mainwindow::set_menubar()
 
 		if (ok)
 		{
-			std::string filedialogpath = QFileDialog::getSaveFileName(this, QString(), QString::fromStdWString(this->ryupdate_path), "c/c++ header file (*.h)").toStdString();
+			std::string filedialogpath = QFileDialog::getSaveFileName(this, QString(), QString::fromStdString(this->ryupdate_path), "c/c++ header file (*.h)").toStdString();
 			if (!filedialogpath.empty())
 			{
 				signature_export::save(filedialogpath, signature_export::make_header(this->signatures, text));
@@ -668,7 +667,7 @@ void mainwindow::set_menubar()
 				return dw & FILE_ATTRIBUTE_DIRECTORY;
 			};
 
-			std::string directory = QFileDialog::getExistingDirectory(this, "Ryupdate: Export to C++", QString::fromStdWString(this->ryupdate_path), QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks).toStdString();
+			std::string directory = QFileDialog::getExistingDirectory(this, "Ryupdate: Export to C++", QString::fromStdString(this->ryupdate_path), QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks).toStdString();
 
 			if (is_directory(directory))
 			{
@@ -710,14 +709,14 @@ void mainwindow::set_menubar()
 		QColor color = QColorDialog::getColor(QColor(0, 120, 210), this);
 		if (!(color.red() == 0 && color.green() == 0 && color.blue() == 0))
 		{
-			this->set_stylesheet(std::make_tuple<byte, byte, byte>(color.red(), color.green(), color.blue()));
+			this->set_style_sheet(std::make_tuple<uint8_t, uint8_t, uint8_t>(color.red(), color.green(), color.blue()));
 			this->repaint();
 		}
 	});
 
 	//
 	ptoolsmenu->addAction("Update Signature Item", this, [this]() {
-		QList<QTableWidgetItem *> items = this->tablewidget->selectedItems();
+		QList<QTableWidgetItem *> items = this->table_widget->selectedItems();
 
 		for (const QTableWidgetItem *p : items)
 		{
@@ -749,91 +748,54 @@ void mainwindow::set_menubar()
 		messagebox->setWindowTitle("About Ryupdate");
 		messagebox->exec();
 	});
-
-	//DEBUG MENU
-	/*QMenu *pdebugmenu = this->menuBar()->addMenu("Debug");
-	pdebugmenu->addAction("Enumerate Resources", this, [this]()
-		{
-			QDirIterator it(":", QDirIterator::Subdirectories);
-			while (it.hasNext()) {
-				printf("%s\n", it.next().toStdString().c_str());
-			}
-		});*/
-	/*pdebugmenu->addAction("Print Set<SignatureName>", this, [this]()
-	{
-		printf("\n");
-		for (const std::string &n : signaturenames)
-		{
-			printf("%s\n", n.c_str());
-		}
-	});
-
-	pdebugmenu->addAction("Print Map<>", this, [this]()
-	{
-		printf("\n");
-		for (auto &n : signatures)
-		{
-			printf("%s\t%d\t%s\t%d\t%s\t%s\n", n.first.c_str(), n.second->type, n.second->signature.c_str(), n.second->result, n.second->data.c_str(), n.second->comments.c_str());
-		}
-	});
-
-	pdebugmenu->addAction("EnumModules", this, [this]()
-	{
-		printf("Random String: %d\n", settings->get_newsignature_randomstring());
-
-		std::vector<std::pair<unsigned long, size_t>> regions = settings->get_selected_regions();
-		for (const std::pair<unsigned long, size_t> n : regions)
-		{
-			printf("%.08X->%.08X\n", n.first, n.first + n.second);
-		}
-	});*/
 }
 
-void mainwindow::set_statusbar()
+void mainwindow::set_status_bar()
 {
-	this->statusBar()->insertWidget(0, statuslabel.get());
-	this->statusBar()->addPermanentWidget(progressbar.get());
+	this->statusBar()->insertWidget(0, status_label.get());
+	this->statusBar()->addPermanentWidget(progress_bar.get());
 }
 
-std::string mainwindow::get_signature_data(int32_t row)
+std::string mainwindow::get_signature_data(size_t row)
 {
-	std::shared_ptr<signatureitem> x = signatures[this->tablewidget->item(row, 0)->text().toStdString()];
+	std::shared_ptr<signature_item> x = signatures[this->table_widget->item(row, 0)->text().toStdString()];
 
-	std::string text = x->name;
+	std::stringstream text;
+	text << x->name;
 
 	if (!x->data.empty())
 	{
-		text += ": " + x->data;
+		text << ": " << x->data;
 	}
 
-	text += " //" + x->signature;
+	text << " //" << x->signature;
 
 	if (!x->comments.empty())
 	{
-		text += " {" + x->comments + "}";
+		text << " {" << x->comments << '}';
 	}
 
-	text += " [Result: " + std::to_string(x->result) + "]";
+	text << " [Result: " << std::to_string(x->result) << ']';
 
-	return text;
+	return text.str();
 }
 
-std::pair<unsigned long, size_t> mainwindow::region()
+std::pair<address_t, size_t> mainwindow::region()
 {
-	std::vector<std::pair<unsigned long, size_t>> regions = settings->get_selected_regions();
+	auto regions = settings->get_selected_regions();
 	return regions.empty() ? std::make_pair(0, 0) : regions.at(0);
 }
 
-void mainwindow::showEvent(QShowEvent *showevent)
+void mainwindow::showEvent(QShowEvent *qevent)
 {
-	QMainWindow::showEvent(showevent);
+	QMainWindow::showEvent(qevent);
 
 	//resources are fucking case-sensitive
-	this->set_stylesheet(std::make_tuple<byte, byte, byte>(230, 80, 120));
+	this->set_style_sheet(std::make_tuple<uint8_t, uint8_t, uint8_t>(230, 80, 120));
 	this->setWindowIcon(QIcon(":/resources/app.png"));
 }
 
-void mainwindow::closeEvent(QCloseEvent *closeevent)
+void mainwindow::closeEvent(QCloseEvent *)
 {
 	ryupdate::destroy();
 }
